@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0F2A47">
+<meta name="description" content="HFO1拠点 希望シフト提出ツール">
+
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HFO1希望シフト">
+
+<!-- アイコン -->
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="manifest" href="manifest.json">
+
+<title>HFO1 希望シフト入力</title>
+<style>
+:root {
+  --primary:      #2E7D7A;
+  --primary-dark: #1F5957;
+  --bg-dark:      #0F2A47;
+  --bg-darker:    #081A2E;
+  --accent:       #F4A261;
+  --text:         #FFFFFF;
+  --text-muted:   rgba(255,255,255,0.65);
+  --glow:         rgba(46, 125, 122, 0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  height: 100%;
+  background: var(--bg-dark);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ===== 背景グリッド ===== */
+.bg-grid {
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(46,125,122,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46,125,122,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== グローオーブ ===== */
+.glow-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+.glow-orb.a {
+  width: 400px; height: 400px;
+  background: var(--primary);
+  top: -100px; left: -100px;
+  animation: float-a 8s ease-in-out infinite;
+}
+.glow-orb.b {
+  width: 350px; height: 350px;
+  background: var(--accent);
+  bottom: -100px; right: -100px;
+  opacity: 0.3;
+  animation: float-b 10s ease-in-out infinite;
+}
+@keyframes float-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(60px, 50px) scale(1.1); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-50px, -40px) scale(1.15); }
+}
+
+/* ===== コンテナ ===== */
+.container {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+/* ===== ロゴ ===== */
+.logo-wrap {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 32px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.8s, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.logo-wrap.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.logo-card {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.5),
+    0 0 80px var(--glow),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+}
+.logo-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15), transparent 50%);
+}
+.logo-text {
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: white;
+  z-index: 1;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+}
+.logo-bar {
+  width: 60px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 2px;
+  margin-top: 8px;
+  z-index: 1;
+}
+
+/* パーティクル装飾 */
+.dot-canvas {
+  position: absolute;
+  inset: -50px;
+  pointer-events: none;
+}
+
+/* ===== タイトル ===== */
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: rise 0.7s 0.6s forwards;
+  letter-spacing: 0.05em;
+}
+.title span {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: rise 0.7s 0.8s forwards;
+}
+
+@keyframes rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== ボタン ===== */
+.btn-area {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: rise 0.7s 1s forwards;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 16px 36px;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow:
+    0 10px 30px rgba(46,125,122,0.5),
+    0 0 0 1px rgba(255,255,255,0.1) inset;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.6s;
+}
+.btn:hover::before { left: 100%; }
+.btn:active { transform: scale(0.96); }
+.btn-icon { font-size: 1.3em; }
+
+/* ===== フッター ===== */
+.footer {
+  position: fixed;
+  bottom: 16px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0;
+  animation: rise 0.7s 1.4s forwards;
+  z-index: 1;
+}
+
+.footer .ver {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  font-size: 0.65rem;
+}
+
+/* ===== タブレット ===== */
+@media (min-width: 768px) {
+  .logo-wrap { width: 260px; height: 260px; }
+  .logo-text { font-size: 76px; }
+  .title { font-size: 1.9rem; }
+  .subtitle { font-size: 1.05rem; }
+  .btn { padding: 18px 44px; font-size: 1.15rem; }
+}
+
+/* ===== iOSセーフエリア ===== */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .footer { bottom: calc(16px + env(safe-area-inset-bottom)); }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="glow-orb a"></div>
+<div class="glow-orb b"></div>
+
+<div class="container">
+  <div class="logo-wrap" id="logoWrap">
+    <div class="logo-card">
+      <div class="logo-text">HFO1</div>
+      <div class="logo-bar"></div>
+    </div>
+  </div>
+
+  <h1 class="title"><span>HFO1</span> 希望シフト入力</h1>
+  <p class="subtitle">タップで簡単に希望シフトを提出</p>
+
+  <div class="btn-area">
+    <a class="btn" id="startBtn" href="https://script.google.com/macros/s/AKfycbyGn9Elwc0qjiX5s0BkKWQrYBKUAsQgNiWpLP4AJStnX4Mr_0Baxa0vd-deAmZCPAyrGA/exec">
+      <span class="btn-icon">📅</span>
+      入力をはじめる
+    </a>
+  </div>
+
+  <div class="footer">
+    © Gworker LLC
+    <span class="ver">v1.0</span>
+  </div>
+</div>
+
+<script>
+// ロゴアニメーション開始
+setTimeout(function(){
+  document.getElementById('logoWrap').classList.add('visible');
+}, 100);
+
+// Service Worker登録
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js')
+      .then(function(reg) {
+        console.log('SW registered:', reg.scope);
+      })
+      .catch(function(err) {
+        console.warn('SW registration failed:', err);
+      });
+  });
+}
+
+// 起動URL（PWAインストール後はホームから起動するとここに来る）
+// ボタン押下でGASに遷移
+</script>
+</body>
+</html>
