@@ -6,12 +6,10 @@
 <meta name="theme-color" content="#0F2A47">
 <meta name="description" content="HFO1拠点 希望シフト提出ツール">
 
-<!-- iOS PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="HFO1希望シフト">
 
-<!-- アイコン -->
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -25,40 +23,41 @@
   --bg-dark:      #0F2A47;
   --bg-darker:    #081A2E;
   --accent:       #F4A261;
+  --accent-glow:  rgba(244, 162, 97, 0.4);
+  --teal-glow:    rgba(46, 125, 122, 0.5);
   --text:         #FFFFFF;
   --text-muted:   rgba(255,255,255,0.65);
-  --glow:         rgba(46, 125, 122, 0.4);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body {
-  height: 100%;
-  background: var(--bg-dark);
+  min-height: 100%;
+  background: #000;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
+  -webkit-text-size-adjust: 100%;
+  transition: background 1.2s ease;
 }
+html.bg-ready, body.bg-ready { background: var(--bg-dark); }
+body { overflow-x: hidden; }
 
 /* ===== 背景グリッド ===== */
 .bg-grid {
-  position: fixed; inset: 0;
+  position: fixed; inset: 0; z-index: 0;
   background-image:
     linear-gradient(rgba(46,125,122,0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(46,125,122,0.06) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
-  z-index: 0;
+  opacity: 0;
+  transition: opacity 1s ease 0.5s;
 }
+body.bg-ready .bg-grid { opacity: 1; }
 
 /* ===== グローオーブ ===== */
 .glow-orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  pointer-events: none;
-  z-index: 0;
+  position: fixed; border-radius: 50%; filter: blur(80px);
+  opacity: 0; z-index: 0; pointer-events: none;
+  transition: opacity 1s ease 1s;
 }
 .glow-orb.a {
   width: 400px; height: 400px;
@@ -70,9 +69,10 @@ html, body {
   width: 350px; height: 350px;
   background: var(--accent);
   bottom: -100px; right: -100px;
-  opacity: 0.3;
   animation: float-b 10s ease-in-out infinite;
 }
+body.bg-ready .glow-orb.a { opacity: 0.5; }
+body.bg-ready .glow-orb.b { opacity: 0.3; }
 @keyframes float-a {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50%      { transform: translate(60px, 50px) scale(1.1); }
@@ -84,116 +84,91 @@ html, body {
 
 /* ===== コンテナ ===== */
 .container {
-  position: relative;
-  z-index: 1;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px 24px 60px;
   text-align: center;
+  gap: 1.2rem;
 }
 
-/* ===== ロゴ ===== */
+/* ===== ロゴカード ===== */
 .logo-wrap {
-  position: relative;
-  width: 200px;
-  height: 200px;
-  margin-bottom: 32px;
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.8s, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.logo-wrap.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.logo-card {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  width: min(80vw, 320px);
+  height: min(80vw, 320px);
+  background: transparent;
   border-radius: 32px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  box-shadow: none;
+  opacity: 0;
+}
+.logo-wrap.bg-ready {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   box-shadow:
     0 20px 60px rgba(0,0,0,0.5),
-    0 0 80px var(--glow),
+    0 0 80px var(--teal-glow),
     inset 0 1px 0 rgba(255,255,255,0.1);
-  position: relative;
-  overflow: hidden;
 }
-.logo-card::before {
+.logo-wrap.bg-ready::before {
   content: '';
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0;
   background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15), transparent 50%);
+  pointer-events: none;
 }
-.logo-text {
-  font-size: 56px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  color: white;
-  z-index: 1;
-  font-family: -apple-system, "Helvetica Neue", sans-serif;
+.logo-wrap.bg-ready::after {
+  content: '';
+  position: absolute; top: -50%; left: -60%;
+  width: 40%; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transform: skewX(-20deg); opacity: 0;
+  animation: logoShimmer 4s ease-in-out 7s infinite;
 }
-.logo-bar {
-  width: 60px;
-  height: 4px;
-  background: var(--accent);
-  border-radius: 2px;
-  margin-top: 8px;
-  z-index: 1;
+@keyframes logoShimmer {
+  0%{left:-60%;opacity:0}
+  10%{opacity:1}
+  35%{left:120%;opacity:1}
+  40%{opacity:0}
+  100%{left:120%;opacity:0}
 }
 
-/* パーティクル装飾 */
-.dot-canvas {
+.dot-canvas { position: absolute; z-index: 2; pointer-events: none; }
+
+.logo-img {
   position: absolute;
-  inset: -50px;
-  pointer-events: none;
+  width: 85%; height: auto;
+  z-index: 1;
+  visibility: hidden;
 }
 
 /* ===== タイトル ===== */
 .title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: rise 0.7s 0.6s forwards;
+  font-size: clamp(1.4rem, 5vw, 1.9rem);
+  font-weight: 800;
   letter-spacing: 0.05em;
+  opacity: 0; transform: translateY(20px);
 }
-.title span {
-  color: var(--accent);
-  font-weight: 900;
-}
+.title.show { animation: fadeUp 0.7s ease forwards; }
+.title span { color: var(--accent); font-weight: 900; }
 
 .subtitle {
   font-size: 0.95rem;
   color: var(--text-muted);
-  margin-bottom: 36px;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: rise 0.7s 0.8s forwards;
+  opacity: 0; transform: translateY(20px);
 }
-
-@keyframes rise {
-  to { opacity: 1; transform: translateY(0); }
-}
+.subtitle.show { animation: fadeUp 0.7s ease 0.2s forwards; }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
 /* ===== ボタン ===== */
 .btn-area {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: rise 0.7s 1s forwards;
+  margin-top: 0.6rem;
+  opacity: 0; transform: translateY(20px);
 }
+.btn-area.show { animation: fadeUp 0.7s ease 0.4s forwards; }
 .btn {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  align-items: center; justify-content: center;
   gap: 10px;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
@@ -203,37 +178,137 @@ html, body {
   font-weight: 700;
   text-decoration: none;
   box-shadow:
-    0 10px 30px rgba(46,125,122,0.5),
+    0 10px 30px var(--teal-glow),
     0 0 0 1px rgba(255,255,255,0.1) inset;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
+  transition: transform 0.15s;
+  animation: btnPulse 2.5s ease-in-out 7s infinite;
 }
+.btn:active { transform: scale(0.96); }
 .btn::before {
-  content: '';
-  position: absolute;
+  content: ''; position: absolute;
   top: 0; left: -100%;
   width: 100%; height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
   transition: left 0.6s;
 }
 .btn:hover::before { left: 100%; }
-.btn:active { transform: scale(0.96); }
+.btn::after {
+  content: ''; position: absolute;
+  top: -50%; left: -60%;
+  width: 40%; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer 3s ease-in-out 7s infinite;
+}
+@keyframes shimmer { 0%{left:-60%} 30%{left:120%} 100%{left:120%} }
+@keyframes btnPulse {
+  0%,100% { box-shadow: 0 10px 30px var(--teal-glow), 0 0 0 0 var(--teal-glow); }
+  50%     { box-shadow: 0 10px 40px var(--teal-glow), 0 0 0 8px rgba(46,125,122,0.08); }
+}
 .btn-icon { font-size: 1.3em; }
+
+/* ===== スクロールヒント ===== */
+.scroll-hint {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+.scroll-hint.show {
+  animation: hint-pulse 2s 1s infinite;
+}
+.scroll-hint .arrow {
+  display: block;
+  font-size: 1.4rem;
+  margin-top: 4px;
+  animation: bounce 1.8s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+/* ===== QRコードセクション ===== */
+.qr-section {
+  position: relative; z-index: 1;
+  padding: 60px 24px 40px;
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+body.bg-ready .qr-section { opacity: 1; }
+
+.qr-section h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+.qr-section h2 .ico { margin-right: 8px; }
+.qr-section .qr-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  max-width: 320px;
+  line-height: 1.6;
+}
+.qr-card {
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 60px var(--teal-glow);
+  margin-bottom: 20px;
+}
+#qrCanvas { display: block; border-radius: 8px; }
+.qr-url-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 8px;
+  max-width: 90vw;
+  word-break: break-all;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: -apple-system, "SF Mono", Menlo, monospace;
+}
+.copy-btn {
+  margin-top: 14px;
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center; gap: 8px;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.15); }
+.copy-btn:active { transform: scale(0.95); }
+.copy-btn.copied {
+  background: var(--primary);
+  border-color: var(--primary);
+}
 
 /* ===== フッター ===== */
 .footer {
-  position: fixed;
-  bottom: 16px;
-  left: 0; right: 0;
+  width: 100%;
   text-align: center;
   font-size: 0.7rem;
   color: var(--text-muted);
-  opacity: 0;
-  animation: rise 0.7s 1.4s forwards;
-  z-index: 1;
+  padding: 24px 0;
 }
-
 .footer .ver {
   display: inline-block;
   margin-left: 8px;
@@ -243,72 +318,635 @@ html, body {
   font-size: 0.65rem;
 }
 
+/* ===== iOSセーフエリア ===== */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .footer { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+}
+
 /* ===== タブレット ===== */
 @media (min-width: 768px) {
-  .logo-wrap { width: 260px; height: 260px; }
-  .logo-text { font-size: 76px; }
-  .title { font-size: 1.9rem; }
+  .logo-wrap { width: min(50vw, 360px); height: min(50vw, 360px); }
+  .title { font-size: 2rem; }
   .subtitle { font-size: 1.05rem; }
   .btn { padding: 18px 44px; font-size: 1.15rem; }
 }
-
-/* ===== iOSセーフエリア ===== */
-@supports (padding: env(safe-area-inset-bottom)) {
-  .footer { bottom: calc(16px + env(safe-area-inset-bottom)); }
+@media (orientation:landscape) and (max-height:500px){
+  .container{ gap:.6rem; padding:1rem; }
+  .logo-wrap{ width:min(50vw,240px); height:min(50vw,240px); }
+  .title{ font-size:1.1rem; }
+  .btn{ padding:.7rem 1.5rem; font-size:1rem; }
 }
 </style>
 </head>
 <body>
 
+<!-- オープニングアニメ用フルスクリーンキャンバス -->
+<canvas id="introCanvas" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:100;pointer-events:none"></canvas>
+
 <div class="bg-grid"></div>
 <div class="glow-orb a"></div>
 <div class="glow-orb b"></div>
 
+<!-- ===== ファーストビュー ===== -->
 <div class="container">
-  <div class="logo-wrap" id="logoWrap">
-    <div class="logo-card">
-      <div class="logo-text">HFO1</div>
-      <div class="logo-bar"></div>
-    </div>
+  <div class="logo-wrap" id="logoWrap" style="cursor:pointer">
+    <canvas class="dot-canvas" id="dotCanvas"></canvas>
+    <img class="logo-img" id="logoImg" src="data:image/png;base64,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" alt="HFO1">
   </div>
 
-  <h1 class="title"><span>HFO1</span> 希望シフト入力</h1>
-  <p class="subtitle">タップで簡単に希望シフトを提出</p>
+  <h1 class="title" id="title"><span>HFO1</span> 希望シフト入力</h1>
+  <p class="subtitle" id="subtitle">タップで簡単に希望シフトを提出</p>
 
-  <div class="btn-area">
-    <a class="btn" id="startBtn" href="https://script.google.com/macros/s/AKfycbyGn9Elwc0qjiX5s0BkKWQrYBKUAsQgNiWpLP4AJStnX4Mr_0Baxa0vd-deAmZCPAyrGA/exec">
+  <div class="btn-area" id="btnArea">
+    <a class="btn" href="https://script.google.com/macros/s/AKfycbyGn9Elwc0qjiX5s0BkKWQrYBKUAsQgNiWpLP4AJStnX4Mr_0Baxa0vd-deAmZCPAyrGA/exec">
       <span class="btn-icon">📅</span>
       入力をはじめる
     </a>
   </div>
 
-  <div class="footer">
-    © Gworker LLC
-    <span class="ver">v1.0</span>
+  <div class="scroll-hint" id="scrollHint" onclick="scrollToQR()">
+    QRコードを表示
+    <span class="arrow">↓</span>
   </div>
 </div>
 
-<script>
-// ロゴアニメーション開始
-setTimeout(function(){
-  document.getElementById('logoWrap').classList.add('visible');
-}, 100);
+<!-- ===== QRコードセクション ===== -->
+<section class="qr-section" id="qrSection">
+  <h2><span class="ico">📱</span>このページをシェア</h2>
+  <p class="qr-desc">
+    スマホで読み取って<br>
+    ホーム画面に追加すれば<br>
+    アプリのように使えます
+  </p>
+  <div class="qr-card">
+    <canvas id="qrCanvas"></canvas>
+  </div>
+  <div class="qr-url-box" id="urlBox"></div>
+  <button class="copy-btn" id="copyBtn" onclick="copyUrl()">
+    <span id="copyIco">📋</span>
+    <span id="copyText">URLをコピー</span>
+  </button>
 
-// Service Worker登録
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js')
-      .then(function(reg) {
-        console.log('SW registered:', reg.scope);
-      })
-      .catch(function(err) {
-        console.warn('SW registration failed:', err);
+  <div class="footer">
+    © Gworker LLC
+    <span class="ver">v1.1</span>
+  </div>
+</section>
+
+<script>
+// ============================================================
+//  オープニングアニメーション + ロゴスライドイン
+// ============================================================
+(function(){
+  var dotData = {"w":260,"h":110,"pts":[[64,34],[60,36],[62,36],[64,36],[66,36],[58,38],[60,38],[62,38],[64,38],[66,38],[56,40],[58,40],[60,40],[62,40],[64,40],[66,40],[52,42],[54,42],[56,42],[58,42],[60,42],[62,42],[64,42],[66,42],[50,44],[52,44],[54,44],[56,44],[58,44],[60,44],[62,44],[64,44],[66,44],[28,46],[30,46],[32,46],[34,46],[36,46],[38,46],[40,46],[42,46],[44,46],[46,46],[70,46],[72,46],[74,46],[76,46],[78,46],[80,46],[82,46],[84,46],[86,46],[88,46],[26,48],[28,48],[30,48],[32,48],[34,48],[36,48],[38,48],[40,48],[42,48],[50,48],[52,48],[54,48],[56,48],[58,48],[60,48],[62,48],[64,48],[70,48],[72,48],[74,48],[76,48],[78,48],[80,48],[82,48],[84,48],[134,48],[136,48],[220,48],[28,50],[30,50],[32,50],[34,50],[36,50],[38,50],[44,50],[46,50],[48,50],[50,50],[68,50],[70,50],[72,50],[74,50],[76,50],[78,50],[80,50],[132,50],[134,50],[136,50],[218,50],[220,50],[222,50],[30,52],[32,52],[34,52],[36,52],[42,52],[44,52],[46,52],[68,52],[70,52],[74,52],[76,52],[78,52],[82,52],[84,52],[86,52],[92,52],[94,52],[102,52],[104,52],[106,52],[108,52],[116,52],[118,52],[120,52],[124,52],[126,52],[130,52],[132,52],[134,52],[140,52],[142,52],[144,52],[150,52],[152,52],[154,52],[156,52],[158,52],[166,52],[168,52],[174,52],[180,52],[182,52],[184,52],[188,52],[190,52],[192,52],[194,52],[196,52],[198,52],[200,52],[202,52],[204,52],[206,52],[208,52],[210,52],[212,52],[214,52],[216,52],[218,52],[220,52],[222,52],[32,54],[34,54],[36,54],[40,54],[42,54],[44,54],[54,54],[56,54],[58,54],[60,54],[62,54],[68,54],[70,54],[74,54],[76,54],[78,54],[80,54],[82,54],[84,54],[86,54],[90,54],[92,54],[98,54],[100,54],[102,54],[104,54],[106,54],[108,54],[110,54],[114,54],[116,54],[118,54],[120,54],[122,54],[124,54],[130,54],[132,54],[134,54],[136,54],[138,54],[140,54],[146,54],[148,54],[150,54],[152,54],[154,54],[156,54],[158,54],[164,54],[166,54],[168,54],[170,54],[172,54],[174,54],[178,54],[182,54],[184,54],[186,54],[188,54],[190,54],[192,54],[194,54],[196,54],[198,54],[200,54],[202,54],[204,54],[206,54],[208,54],[210,54],[212,54],[214,54],[216,54],[218,54],[220,54],[222,54],[224,54],[36,56],[40,56],[42,56],[44,56],[58,56],[60,56],[62,56],[66,56],[74,56],[76,56],[80,56],[84,56],[86,56],[88,56],[90,56],[96,56],[98,56],[100,56],[106,56],[108,56],[110,56],[114,56],[116,56],[118,56],[128,56],[130,56],[132,56],[134,56],[136,56],[146,56],[148,56],[150,56],[152,56],[154,56],[156,56],[158,56],[162,56],[164,56],[166,56],[178,56],[180,56],[182,56],[186,56],[188,56],[190,56],[192,56],[194,56],[196,56],[198,56],[200,56],[202,56],[204,56],[206,56],[208,56],[210,56],[212,56],[214,56],[216,56],[218,56],[220,56],[222,56],[224,56],[226,56],[34,58],[40,58],[42,58],[44,58],[46,58],[56,58],[58,58],[60,58],[66,58],[74,58],[76,58],[78,58],[82,58],[84,58],[86,58],[88,58],[94,58],[96,58],[98,58],[100,58],[104,58],[106,58],[108,58],[112,58],[114,58],[116,58],[128,58],[130,58],[134,58],[136,58],[138,58],[144,58],[146,58],[148,58],[162,58],[164,58],[166,58],[176,58],[180,58],[184,58],[186,58],[188,58],[190,58],[192,58],[194,58],[196,58],[198,58],[200,58],[202,58],[204,58],[206,58],[208,58],[210,58],[212,58],[214,58],[216,58],[218,58],[220,58],[222,58],[224,58],[32,60],[34,60],[36,60],[42,60],[44,60],[46,60],[48,60],[50,60],[52,60],[54,60],[56,60],[58,60],[64,60],[72,60],[74,60],[76,60],[78,60],[82,60],[84,60],[86,60],[96,60],[98,60],[100,60],[102,60],[104,60],[112,60],[114,60],[116,60],[126,60],[128,60],[130,60],[134,60],[136,60],[138,60],[146,60],[148,60],[150,60],[152,60],[154,60],[160,60],[162,60],[164,60],[174,60],[178,60],[180,60],[182,60],[184,60],[186,60],[188,60],[190,60],[192,60],[194,60],[196,60],[198,60],[200,60],[202,60],[204,60],[206,60],[208,60],[210,60],[212,60],[214,60],[216,60],[218,60],[220,60],[30,62],[32,62],[34,62],[36,62],[38,62],[62,62],[64,62],[212,62],[214,62],[216,62],[28,64],[30,64],[32,64],[34,64],[36,64],[38,64],[40,64],[42,64],[44,64],[46,64],[48,64],[50,64],[52,64],[54,64],[56,64],[58,64],[60,64],[62,64],[64,64],[210,64],[212,64],[26,66],[28,66],[30,66],[32,66],[34,66],[36,66],[38,66],[52,66],[54,66],[56,66],[58,66],[60,66],[62,66],[26,68],[28,68],[30,68],[58,68],[60,68],[62,68],[62,70]]};
+  var wrap = document.getElementById('logoWrap');
+  var canvas = document.getElementById('dotCanvas');
+  var ctx = canvas.getContext('2d');
+  var logoImg = document.getElementById('logoImg');
+
+  var wrapSize = wrap.offsetWidth;
+  var scale = wrapSize / 320;
+  var canvasW = wrapSize, canvasH = wrapSize;
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  canvas.style.width = canvasW + 'px';
+  canvas.style.height = canvasH + 'px';
+
+  var logoW = dotData.w * scale;
+  var logoH = dotData.h * scale;
+  var offsetX = (canvasW - logoW) / 2;
+
+  // ロゴ画像の見える部分の比率
+  var visTopRatio = 138 / 469;
+  var visBotRatio = 301 / 469;
+  var visCenterRatio = (visTopRatio + visBotRatio) / 2;
+
+  var imgDisplayW = wrapSize * 0.85;
+  var imgAspect = 469 / 1101;
+  var imgDisplayH = imgDisplayW * imgAspect;
+
+  var wrapCenter = wrapSize / 2;
+  var imgTop = wrapCenter - visCenterRatio * imgDisplayH;
+  var visibleBottom = imgTop + visBotRatio * imgDisplayH;
+
+  logoImg.style.position = 'absolute';
+  logoImg.style.top = imgTop + 'px';
+  logoImg.style.left = '50%';
+  logoImg.style.transform = 'translateX(-300%)';
+  logoImg.style.transformOrigin = 'center center';
+
+  var lineYActual = visibleBottom;
+  var lineLeft = offsetX;
+  var lineRight = offsetX + logoW;
+
+  var slideDur = 2000;
+  var startTime = null;
+  var phase = 'slide';
+
+  // === オープニングアニメ ===
+  var introCanvas = document.getElementById('introCanvas');
+  var ictx = introCanvas.getContext('2d');
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  introCanvas.width = vw;
+  introCanvas.height = vh;
+
+  ictx.fillStyle = '#000000';
+  ictx.fillRect(0, 0, vw, vh);
+
+  // パーティクル色（ティール+オレンジのブランドカラー）
+  var SPARK_COLOR_R = 46, SPARK_COLOR_G = 200, SPARK_COLOR_B = 180;  // ライトティール
+  var ACCENT_COLOR_R = 244, ACCENT_COLOR_G = 162, ACCENT_COLOR_B = 97; // オレンジ
+  
+  function sparkRGBA(alpha) {
+    return 'rgba(' + SPARK_COLOR_R + ',' + SPARK_COLOR_G + ',' + SPARK_COLOR_B + ',' + alpha + ')';
+  }
+  function accentRGBA(alpha) {
+    return 'rgba(' + ACCENT_COLOR_R + ',' + ACCENT_COLOR_G + ',' + ACCENT_COLOR_B + ',' + alpha + ')';
+  }
+
+  setTimeout(function(){
+    var wrapRect = wrap.getBoundingClientRect();
+    var rL = wrapRect.left, rT = wrapRect.top, rW = wrapRect.width, rH = wrapRect.height;
+    var bR = 32;  // ロゴカードの角丸（CSS .logo-wrap.bg-ready の border-radius 32px に合わせる）
+    startIntro(rL, rT, rW, rH, bR);
+  }, 100);
+
+  function startIntro(rL, rT, rW, rH, bR){
+
+    function roundedRectPoints(x, y, w, h, r, count){
+      var pts = [];
+      var segs = [];
+      segs.push({type:'line', x1:x+r, y1:y, x2:x+w-r, y2:y});
+      segs.push({type:'arc', cx:x+w-r, cy:y+r, r:r, a1:-Math.PI/2, a2:0});
+      segs.push({type:'line', x1:x+w, y1:y+r, x2:x+w, y2:y+h-r});
+      segs.push({type:'arc', cx:x+w-r, cy:y+h-r, r:r, a1:0, a2:Math.PI/2});
+      segs.push({type:'line', x1:x+w-r, y1:y+h, x2:x+r, y2:y+h});
+      segs.push({type:'arc', cx:x+r, cy:y+h-r, r:r, a1:Math.PI/2, a2:Math.PI});
+      segs.push({type:'line', x1:x, y1:y+h-r, x2:x, y2:y+r});
+      segs.push({type:'arc', cx:x+r, cy:y+r, r:r, a1:Math.PI, a2:Math.PI*1.5});
+
+      var lengths = segs.map(function(s){
+        if(s.type==='line') return Math.hypot(s.x2-s.x1, s.y2-s.y1);
+        return Math.abs(s.a2-s.a1)*s.r;
       });
-  });
+      var total = lengths.reduce(function(a,b){return a+b;},0);
+
+      for(var i=0;i<count;i++){
+        var d = (i/count)*total;
+        var acc=0;
+        for(var j=0;j<segs.length;j++){
+          if(acc+lengths[j]>=d){
+            var t=(d-acc)/lengths[j];
+            var s=segs[j];
+            if(s.type==='line'){
+              pts.push({x:s.x1+(s.x2-s.x1)*t, y:s.y1+(s.y2-s.y1)*t});
+            } else {
+              var a=s.a1+(s.a2-s.a1)*t;
+              pts.push({x:s.cx+Math.cos(a)*s.r, y:s.cy+Math.sin(a)*s.r});
+            }
+            break;
+          }
+          acc+=lengths[j];
+        }
+      }
+      return pts;
+    }
+
+    var sparkDur = 6000;
+    var introHold = 700;
+    var introReveal = 2000;
+    var introStart = null;
+    var introPhase = 'spark';
+
+    function easeOutQuart(t){ return 1 - Math.pow(1-t, 4); }
+
+    var perimPts = roundedRectPoints(rL, rT, rW, rH, bR, 1000);
+    var sparkCount = 2000;
+    var sparkParticles = [];
+    for(var i = 0; i < sparkCount; i++){
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 50 + Math.pow(Math.random(), 0.5) * Math.max(vw, vh) * 0.7;
+      var borderIdx = Math.floor((i / sparkCount) * perimPts.length);
+      var bp = perimPts[borderIdx];
+      sparkParticles.push({
+        angle: angle, dist: dist,
+        scatterX: vw/2 + Math.cos(angle) * dist,
+        scatterY: vh/2 + Math.sin(angle) * dist,
+        borderX: bp.x, borderY: bp.y,
+        size: 0.5 + Math.random() * 0.7,
+        // 一部のパーティクルをオレンジにする
+        isAccent: Math.random() < 0.15
+      });
+    }
+
+    function introAnimate(ts){
+      if(!introStart) introStart = ts;
+      var el = ts - introStart;
+
+      if(introPhase === 'spark'){
+        var t = el / sparkDur;
+        if(t > 1) t = 1;
+
+        ictx.clearRect(0,0,vw,vh);
+        ictx.fillStyle = '#000000';
+        ictx.fillRect(0,0,vw,vh);
+
+        if(t < 0.2){
+          // Phase A: 中央に光が誕生（ティール+オレンジハロー）
+          var p = t / 0.2;
+          var ease = easeOutQuart(p);
+          var dotSize = 1 + ease * 5;
+          
+          ictx.save();
+          ictx.shadowColor = accentRGBA(ease * 0.6);
+          ictx.shadowBlur = 30 + ease * 40;
+          ictx.beginPath();
+          ictx.arc(vw/2, vh/2, dotSize * 1.4, 0, Math.PI*2);
+          ictx.fillStyle = accentRGBA(0.3 + ease * 0.3);
+          ictx.fill();
+          ictx.restore();
+          
+          ictx.save();
+          ictx.shadowColor = sparkRGBA(ease * 0.9);
+          ictx.shadowBlur = 10 + ease * 30;
+          ictx.beginPath();
+          ictx.arc(vw/2, vh/2, dotSize, 0, Math.PI*2);
+          ictx.fillStyle = sparkRGBA(0.6 + ease * 0.4);
+          ictx.fill();
+          var pulse = Math.sin(p * Math.PI * 3) * 0.3;
+          ictx.shadowBlur = 20 + pulse * 20;
+          ictx.beginPath();
+          ictx.arc(vw/2, vh/2, dotSize * 0.6, 0, Math.PI*2);
+          ictx.fillStyle = sparkRGBA(0.4 + pulse);
+          ictx.fill();
+          ictx.restore();
+
+        } else if(t < 0.5){
+          // Phase B: 爆発拡散
+          var p = (t - 0.2) / 0.3;
+          var ease = easeOutQuart(p);
+
+          for(var i = 0; i < sparkParticles.length; i++){
+            var sp = sparkParticles[i];
+            var cx = vw/2 + (sp.scatterX - vw/2) * ease;
+            var cy = vh/2 + (sp.scatterY - vh/2) * ease;
+            var alpha = Math.max(0.2, 1 - p * 0.5);
+
+            // トレイル
+            if(p < 0.7){
+              var tp = ease * 0.6;
+              var tx = vw/2 + (sp.scatterX - vw/2) * tp;
+              var ty = vh/2 + (sp.scatterY - vh/2) * tp;
+              ictx.beginPath();
+              ictx.arc(tx, ty, sp.size * 0.4, 0, Math.PI*2);
+              ictx.fillStyle = sp.isAccent ? accentRGBA(alpha * 0.2) : sparkRGBA(alpha * 0.2);
+              ictx.fill();
+            }
+
+            ictx.beginPath();
+            ictx.arc(cx, cy, sp.size, 0, Math.PI*2);
+            ictx.fillStyle = sp.isAccent ? accentRGBA(alpha) : sparkRGBA(alpha);
+            ictx.fill();
+          }
+
+          // 中央フラッシュ
+          if(p < 0.3){
+            var flashAlpha = (1 - p / 0.3) * 0.6;
+            ictx.save();
+            ictx.shadowColor = sparkRGBA(flashAlpha);
+            ictx.shadowBlur = 40;
+            ictx.beginPath();
+            ictx.arc(vw/2, vh/2, 3 * (1 - p/0.3), 0, Math.PI*2);
+            ictx.fillStyle = sparkRGBA(flashAlpha);
+            ictx.fill();
+            ictx.restore();
+          }
+
+        } else {
+          // Phase C: 集結
+          var p = (t - 0.5) / 0.5;
+          var rectCx = rL + rW / 2;
+          var rectCy = rT + rH / 2;
+
+          if(p < 0.3){
+            // C-1: 右回転で中央に収束
+            var pp = p / 0.3;
+            var ease = easeOutQuart(pp);
+            var circleRadius = Math.min(rW, rH) * 0.03;
+
+            for(var i = 0; i < sparkParticles.length; i++){
+              var sp = sparkParticles[i];
+              var dx = sp.scatterX - rectCx;
+              var dy = sp.scatterY - rectCy;
+              var dist = Math.sqrt(dx*dx + dy*dy);
+              var angle = Math.atan2(dy, dx);
+              var twistAngle = angle + ease * Math.PI * 0.8;
+              var circleAngle = Math.random() * Math.PI * 2;
+              var targetDist = Math.pow(Math.random(), 0.3) * circleRadius;
+              var targetX = rectCx + Math.cos(circleAngle) * targetDist;
+              var targetY = rectCy + Math.sin(circleAngle) * targetDist;
+              var spinX = rectCx + Math.cos(twistAngle) * dist * (1 - ease * 0.7);
+              var spinY = rectCy + Math.sin(twistAngle) * dist * (1 - ease * 0.7);
+              var cx = spinX + (targetX - spinX) * ease;
+              var cy = spinY + (targetY - spinY) * ease;
+
+              ictx.beginPath();
+              ictx.arc(cx, cy, sp.size, 0, Math.PI*2);
+              ictx.fillStyle = sp.isAccent ? accentRGBA(0.8) : sparkRGBA(0.8);
+              ictx.fill();
+            }
+
+          } else if(p < 0.42){
+            // C-2: 再散開
+            var pp = (p - 0.3) / 0.12;
+            var ease = easeOutQuart(pp);
+            var circleRadius = Math.min(rW, rH) * 0.03;
+
+            for(var i = 0; i < sparkParticles.length; i++){
+              var sp = sparkParticles[i];
+              var circleAngle = (i / sparkParticles.length) * Math.PI * 2;
+              var circDist = Math.pow(Math.random(), 0.3) * circleRadius;
+              var circX = rectCx + Math.cos(circleAngle) * circDist;
+              var circY = rectCy + Math.sin(circleAngle) * circDist;
+              var scatterDist = circleRadius + ease * Math.max(vw, vh) * 0.25;
+              sp._reX = rectCx + Math.cos(circleAngle) * scatterDist;
+              sp._reY = rectCy + Math.sin(circleAngle) * scatterDist;
+              var cx = circX + (sp._reX - circX) * ease;
+              var cy = circY + (sp._reY - circY) * ease;
+
+              ictx.beginPath();
+              ictx.arc(cx, cy, sp.size, 0, Math.PI*2);
+              ictx.fillStyle = sp.isAccent ? accentRGBA(0.6) : sparkRGBA(0.6);
+              ictx.fill();
+            }
+
+          } else {
+            // C-3: 左回転しながらロゴ枠の縁に集結
+            var pp = (p - 0.42) / 0.58;
+            var leftRotations = 3;
+            var rotAngle = -pp * Math.PI * 2 * leftRotations;
+            var settle = pp * pp;
+
+            for(var i = 0; i < sparkParticles.length; i++){
+              var sp = sparkParticles[i];
+              var reX = sp._reX || sp.scatterX;
+              var reY = sp._reY || sp.scatterY;
+
+              var bdx = sp.borderX - rectCx;
+              var bdy = sp.borderY - rectCy;
+              var rotBX = rectCx + bdx * Math.cos(rotAngle) - bdy * Math.sin(rotAngle);
+              var rotBY = rectCy + bdx * Math.sin(rotAngle) + bdy * Math.cos(rotAngle);
+
+              var rdx = reX - rectCx;
+              var rdy = reY - rectCy;
+              var rotRX = rectCx + rdx * Math.cos(rotAngle) - rdy * Math.sin(rotAngle);
+              var rotRY = rectCy + rdx * Math.sin(rotAngle) + rdy * Math.cos(rotAngle);
+
+              var cx = rotRX + (rotBX - rotRX) * settle;
+              var cy = rotRY + (rotBY - rotRY) * settle;
+              var alpha = 0.5 + settle * 0.5;
+
+              ictx.beginPath();
+              ictx.arc(cx, cy, sp.size, 0, Math.PI*2);
+              ictx.fillStyle = sp.isAccent ? accentRGBA(alpha) : sparkRGBA(alpha);
+              ictx.fill();
+            }
+          }
+        }
+
+        if(t >= 1){
+          introPhase = 'hold';
+          introStart = ts;
+        }
+        requestAnimationFrame(introAnimate);
+
+      } else if(introPhase === 'hold'){
+        if(el > introHold){
+          introPhase = 'reveal';
+          introStart = ts;
+        }
+        requestAnimationFrame(introAnimate);
+
+      } else if(introPhase === 'reveal'){
+        // 黒画面 → ネイビー背景 への遷移 + ロゴカードは保持
+        var t = el / introReveal;
+        if(t > 1) t = 1;
+
+        ictx.clearRect(0,0,vw,vh);
+
+        // ネイビー背景を表示
+        ictx.fillStyle = '#0F2A47';
+        ictx.fillRect(0, 0, vw, vh);
+
+        // ロゴカード位置（ティールグラデーション風: ベース色を塗る）
+        ictx.beginPath();
+        ictx.moveTo(rL + bR, rT);
+        ictx.lineTo(rL + rW - bR, rT);
+        ictx.arcTo(rL + rW, rT, rL + rW, rT + bR, bR);
+        ictx.lineTo(rL + rW, rT + rH - bR);
+        ictx.arcTo(rL + rW, rT + rH, rL + rW - bR, rT + rH, bR);
+        ictx.lineTo(rL + bR, rT + rH);
+        ictx.arcTo(rL, rT + rH, rL, rT + rH - bR, bR);
+        ictx.lineTo(rL, rT + bR);
+        ictx.arcTo(rL, rT, rL + bR, rT, bR);
+        ictx.closePath();
+        // ティールグラデーション
+        var grad = ictx.createLinearGradient(rL, rT, rL + rW, rT + rH);
+        grad.addColorStop(0, '#2E7D7A');
+        grad.addColorStop(1, '#1F5957');
+        ictx.fillStyle = grad;
+        ictx.fill();
+
+        // 縁取りグロー
+        var glowAlpha = 0.5 * (1 - t);
+        ictx.strokeStyle = accentRGBA(glowAlpha);
+        ictx.lineWidth = 2;
+        ictx.stroke();
+
+        if(t < 1){
+          // 内側に向かって黒い領域がしぼむマスク
+          var margin = t * Math.max(vw, vh);
+          ictx.save();
+          ictx.beginPath();
+          ictx.rect(0, 0, vw, vh);
+          var eL = rL - margin, eT = rT - margin, eW = rW + margin*2, eH = rH + margin*2, eR = bR + margin;
+          ictx.moveTo(eL + eR, eT);
+          ictx.lineTo(eL + eW - eR, eT);
+          ictx.arcTo(eL + eW, eT, eL + eW, eT + eR, eR);
+          ictx.lineTo(eL + eW, eT + eH - eR);
+          ictx.arcTo(eL + eW, eT + eH, eL + eW - eR, eT + eH, eR);
+          ictx.lineTo(eL + eR, eT + eH);
+          ictx.arcTo(eL, eT + eH, eL, eT + eH - eR, eR);
+          ictx.lineTo(eL, eT + eR);
+          ictx.arcTo(eL, eT, eL + eR, eT, eR);
+          ictx.closePath();
+          ictx.clip('evenodd');
+          ictx.fillStyle = '#000000';
+          ictx.fillRect(0, 0, vw, vh);
+          ictx.restore();
+        }
+
+        if(t >= 1){
+          // 終了: 本物のページにシームレスに切り替え
+          document.documentElement.classList.add('bg-ready');
+          document.body.classList.add('bg-ready');
+          wrap.classList.add('bg-ready');
+          wrap.style.opacity = '1';
+
+          introCanvas.style.transition = 'opacity 0.4s';
+          introCanvas.style.opacity = '0';
+          setTimeout(function(){
+            introCanvas.style.display = 'none';
+            startTime = null;
+            requestAnimationFrame(animate);
+          }, 400);
+        } else {
+          requestAnimationFrame(introAnimate);
+        }
+      }
+    }
+
+    setTimeout(function(){ requestAnimationFrame(introAnimate); }, 200);
+  }
+
+  // === ロゴ画像スライドイン ===
+  function animate(ts){
+    if(!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+
+    if(phase === 'slide'){
+      var t = elapsed / slideDur;
+      if(t > 1) t = 1;
+
+      logoImg.style.visibility = 'visible';
+      canvas.style.display = 'none';
+
+      // バウンドして中央に着地
+      var tx;
+      if(t < 0.5){
+        var p = t / 0.5;
+        var ease = 1 - Math.pow(1 - p, 3);
+        tx = -300 + (300 - 35) * ease;
+      } else if(t < 0.75){
+        var p = (t - 0.5) / 0.25;
+        var ease = 1 - Math.pow(1 - p, 2);
+        tx = -35 + (-55 - (-35)) * ease;
+      } else {
+        var p = (t - 0.75) / 0.25;
+        var ease = 1 - Math.pow(1 - p, 2);
+        tx = -55 + (-50 - (-55)) * ease;
+      }
+
+      var sc = 1;
+      if(t >= 0.4 && t < 0.6){
+        var bp = (t - 0.4) / 0.2;
+        sc = 1 + 0.03 * Math.sin(bp * Math.PI);
+      }
+
+      logoImg.style.transform = 'translateX(' + tx + '%) scale(' + sc + ')';
+
+      if(t >= 1){
+        phase = 'done';
+        logoImg.style.transform = 'translateX(-50%) scale(1)';
+
+        wrap.addEventListener('click', function(){ location.reload(); });
+
+        document.getElementById('title').classList.add('show');
+        document.getElementById('subtitle').classList.add('show');
+        document.getElementById('btnArea').classList.add('show');
+        document.getElementById('scrollHint').classList.add('show');
+      }
+      requestAnimationFrame(animate);
+    }
+  }
+})();
+
+// ============================================================
+//  QRコード
+// ============================================================
+(function(){
+  var url = location.protocol === 'file:'
+    ? 'https://takahirohayashi358244.github.io/Gworker-HFO1/'
+    : location.href.replace(/\/$/,'').split('#')[0].split('?')[0];
+
+  document.getElementById('urlBox').textContent = url;
+
+  var s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
+  s.onload = function(){
+    new QRious({
+      element: document.getElementById('qrCanvas'),
+      value: url,
+      size: 220,
+      backgroundAlpha: 1,
+      foreground: '#0F2A47',
+      background: '#FFFFFF',
+      level: 'M'
+    });
+  };
+  document.head.appendChild(s);
+})();
+
+// ============================================================
+//  ユーティリティ
+// ============================================================
+function scrollToQR() {
+  document.getElementById('qrSection').scrollIntoView({ behavior: 'smooth' });
 }
 
-// 起動URL（PWAインストール後はホームから起動するとここに来る）
-// ボタン押下でGASに遷移
+function copyUrl() {
+  var url = document.getElementById('urlBox').textContent;
+  var btn = document.getElementById('copyBtn');
+  var copyText = document.getElementById('copyText');
+  var copyIco = document.getElementById('copyIco');
+
+  var done = function() {
+    btn.classList.add('copied');
+    copyIco.textContent = '✓';
+    copyText.textContent = 'コピーしました';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      copyIco.textContent = '📋';
+      copyText.textContent = 'URLをコピー';
+    }, 2000);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function() {
+      legacyCopy(url, done);
+    });
+  } else {
+    legacyCopy(url, done);
+  }
+}
+
+function legacyCopy(text, callback) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    callback();
+  } catch(e) {
+    alert('コピーに失敗しました');
+  }
+  document.body.removeChild(ta);
+}
+</script>
+
+<script>
+// Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg) { console.log('SW registered:', reg.scope); })
+      .catch(function(err) { console.warn('SW failed:', err); });
+  });
+}
 </script>
 </body>
 </html>
