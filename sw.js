@@ -1,7 +1,9 @@
 // HFO1 希望シフト PWA Service Worker
-const CACHE_NAME = 'hfo1-shift-v1';
+// v2: HTMLは常にネットワーク優先(network-first)に変更。
+//     ボタンURL等の更新が即反映されるようにする。
+//     静的アセット(アイコン)は従来どおりキャッシュ優先。
+const CACHE_NAME = 'hfo1-shift-v2';   // ← バージョンを上げると古いキャッシュが自動削除される
 const urlsToCache = [
-  './',
   './manifest.json',
   './apple-touch-icon.png',
   './icon-192.png',
@@ -12,7 +14,12 @@ const urlsToCache = [
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(urlsToCache);
+      // 1つ失敗しても全体が止まらないよう個別に追加
+      return Promise.all(
+        urlsToCache.map(function(u) {
+          return cache.add(u).catch(function() { /* 無い物は無視 */ });
+        })
+      );
     })
   );
   self.skipWaiting();
@@ -35,16 +42,46 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-// fetch: GAS（script.google.com）は常にネットワーク、静的アセットはキャッシュ優先
+// fetch
 self.addEventListener('fetch', function(event) {
-  var url = event.request.url;
-  // sw.js自身とGASは常にネットワーク取得
-  if (url.indexOf('sw.js') !== -1 || url.indexOf('script.google.com') !== -1 || url.indexOf('googleusercontent.com') !== -1) {
+  var req = event.request;
+  var url = req.url;
+
+  // sw.js自身・GAS・googleusercontentは常にネットワーク（介入しない）
+  if (url.indexOf('sw.js') !== -1 ||
+      url.indexOf('script.google.com') !== -1 ||
+      url.indexOf('googleusercontent.com') !== -1) {
     return;
   }
+
+  // HTMLナビゲーション（ページ本体）は network-first
+  // → 常に最新のHTML（最新のボタンURL）を取りに行く。失敗時のみキャッシュ。
+  var isHTML = req.mode === 'navigate' ||
+               (req.headers.get('accept') || '').indexOf('text/html') !== -1;
+
+  if (isHTML) {
+    event.respondWith(
+      fetch(req).then(function(res) {
+        // 取得成功したら最新をキャッシュに保存（オフライン用）
+        var copy = res.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put('./', copy);
+        });
+        return res;
+      }).catch(function() {
+        // オフライン時はキャッシュにフォールバック
+        return caches.match('./').then(function(c) {
+          return c || caches.match(req);
+        });
+      })
+    );
+    return;
+  }
+
+  // それ以外（アイコン等の静的アセット）は cache-first
   event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      return cached || fetch(event.request);
+    caches.match(req).then(function(cached) {
+      return cached || fetch(req);
     })
   );
 });
